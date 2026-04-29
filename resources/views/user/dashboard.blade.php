@@ -1,4 +1,4 @@
-@extends('frontend.layouts.ecommercemaster')
+@extends('frontend.layouts.master')
 
 @section('content')
 <section class="my-0 section">

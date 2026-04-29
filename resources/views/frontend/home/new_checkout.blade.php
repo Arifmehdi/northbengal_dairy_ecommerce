@@ -20,7 +20,7 @@
     </div>
 
     @if($cartItems->isEmpty())
-        <p class="text-center text-muted py-5 fs-5">Your cart is empty ðŸ›’</p>
+        <p class="text-center text-muted py-5 fs-5">Your cart is empty</p>
     @else 
     <div class="row">
         <div class="col-12">
