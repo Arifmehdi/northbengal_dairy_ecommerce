@@ -1,0 +1,6 @@
+ALTER TABLE your_table_name
+ADD COLUMN parent_id BIGINT UNSIGNED NULL AFTER id,
+ADD CONSTRAINT fk_parent_category
+FOREIGN KEY (parent_id) REFERENCES your_table_name(id)
+ON DELETE SET NULL ON UPDATE CASCADE;
+ 
