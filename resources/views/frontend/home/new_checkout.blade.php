@@ -1,4 +1,4 @@
-@extends('frontend.layouts.ecommercemaster')
+@extends('frontend.layouts.master')
 @section('title', 'Checkout')
 
 @section('content')

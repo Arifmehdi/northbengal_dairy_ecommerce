@@ -235,12 +235,15 @@ $totalCartPrice = \App\Models\Cart::totalCartPrice();
         <!-- Floating Icons Container -->
         <div class="floating-icons-container">
             <!-- Floating Cart Icon -->
-            {{--<a class="floating-cart-icon" href="{{ route('new.checkout') }}">
-                <i class="fas fa-shopping-cart"></i>
+            <a class="floating-cart-icon" href="{{ route('new.checkout') }}">
+                <svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M19.6667 21H2.33333C1.59733 21 1 20.4027 1 19.6667V2.33333C1 1.59733 1.59733 1 2.33333 1H19.6667C20.4027 1 21 1.59733 21 2.33333V19.6667C21 20.4027 20.4027 21 19.6667 21Z" stroke="#0A52A3" stroke-width="2" stroke-miterlimit="10" stroke-linecap="round" stroke-linejoin="round"></path>
+                    <path d="M15.6666 6.33334C15.6666 8.91068 13.5773 11 11 11C8.42265 11 6.33331 8.91068 6.33331 6.33334" stroke="#0A52A3" stroke-width="2" stroke-miterlimit="10" stroke-linecap="round" stroke-linejoin="round"></path>
+                </svg>
                 <span class="floating-cart-count">
                     <span class="cartItemsCount">{{ $count_data }}</span>
                 </span>
-            </a>--}}
+            </a>
             
             <!-- Floating WhatsApp Icon -->
             <a class="floating-message-icon" href="https://wa.me/8801334927985?text=Hello%20there!" target="_blank">
@@ -343,6 +346,172 @@ $totalCartPrice = \App\Models\Cart::totalCartPrice();
     </script>
 
     @stack('js')
+
+    <script>
+		// Add to Cart
+		$(document).on("click", ".addToCart", function () {
+			let btn = $(this);
+			let url = btn.data("url");
+			let product_id = btn.data("product");
+			let qty = parseInt(btn.closest(".productCartItem").find(".product_qty").val()) || 1;
+
+			$.post(url, { product: product_id, qty: qty }, function (res) {
+				if (res.status) {
+					btn.closest(".productCartItem").html(res.productCartItem);
+					$(".cartCount").text(res.cartCount);
+					$(".cartItemsCount").text(res.cartItemsCount);
+					$(".cartTotalPrice").text(res.cartTotal.toFixed(2) + " tk");
+					$(".mobileCartTotalPrice").text("৳" + res.cartTotal.toFixed(2));
+
+					Swal.fire({
+						toast: true, icon: "success", title: res.message,
+						position: "top", timer: 2000, showConfirmButton: false
+					});
+				}
+			}).fail(() => {
+				Swal.fire("Error", "Could not add to cart.", "error");
+			});
+		});
+
+		// Update Cart Item
+		$(document).on('click', '.updateCartItem', function (e) {
+			e.preventDefault();
+
+			let $btn = $(this);
+			let cartId = $btn.data('cart');
+			let url = $btn.data('url');
+			let $wrapper = $btn.closest('.cart-action-wrapper');
+			let qty = parseInt($wrapper.find('.cartQtyDisplay').text()) || 0;
+
+			if ($btn.hasClass('plus')) { qty++; }
+			else if ($btn.hasClass('minus')) { qty--; if (qty < 0) qty = 0; }
+
+			$btn.prop('disabled', true);
+
+			$.ajax({
+				url: url,
+				method: 'POST',
+				data: { cart: cartId, new_qty: qty, _token: $('meta[name="csrf-token"]').attr('content') },
+				success: function (res) {
+					if (res.status) {
+						if (qty === 0) {
+							$wrapper.html(`
+								<input type="hidden" name="product_qty" value="1" class="product_qty">
+								<button class="btn btn-outline-primary w-100 btn-sm addToCart"
+									data-url="${res.add_to_cart_url}" data-product="${res.product_id}">
+									ADD TO CART
+								</button>
+							`);
+							if ($(".cart-item").length === 0) { window.location.href = "/"; }
+						} else {
+							$wrapper.find('.cartQtyDisplay').text(qty);
+							$wrapper.find('.plus').data('qty', qty);
+							$wrapper.find('.minus').data('qty', qty);
+							let $row = $btn.closest('.cart-item');
+							let $priceBox = $row.find('.itemTotalPrice');
+							if ($priceBox.length) {
+								let unitPrice = parseFloat($priceBox.data('unit-price'));
+								$priceBox.text("Tk. " + (unitPrice * qty).toFixed(2));
+							}
+							updateProductDetailsPrice(qty);
+						}
+						$('.cartCount').text(res.cartCount);
+						$('.cartItemsCount').text(res.cartItemsCount);
+						$(".subtotal").text("Tk. " + res.cartTotal.toFixed(2));
+						$(".discount").text("-Tk. " + res.discount.toFixed(2));
+						$(".payable").text("Tk. " + res.payable.toFixed(2));
+						$(".mobileCartTotalPrice").text('৳' + res.payable.toFixed(2));
+					}
+				},
+				error: function () { alert('Something went wrong! Please try again.'); },
+				complete: function () { $btn.prop('disabled', false); }
+			});
+		});
+
+		// Delete Cart Item
+		$(document).on("click", ".deleteCartItem", function () {
+			let btn = $(this);
+			$.post(btn.data("url"), {}, function (res) {
+				if (res.status) {
+					$('.cart-item[data-cart="' + res.cart_id + '"]').remove();
+					if ($(".cart-item").length === 0) { window.location.href = "/"; }
+					$(".cartCount").text(res.cartCount);
+					$(".cartItemsCount").text(res.cartItemsCount);
+					$(".cartTotalPrice").text(res.cartTotal.toFixed(2) + " tk");
+					$(".subtotal").text("Tk. " + res.cartTotal.toFixed(2)).attr('data-value', res.cartTotal);
+					$(".discount").text("-Tk. " + res.discount.toFixed(2)).attr('data-value', res.discount);
+					$(".payable").text("Tk. " + res.payable.toFixed(2));
+					$(".mobileCartTotalPrice").text('৳' + res.payable.toFixed(2));
+					Swal.fire({ toast: true, icon: "success", title: res.message, position: "top-end", timer: 2000, showConfirmButton: false });
+				}
+			}).fail(() => { Swal.fire("Error", "Cart item could not be removed.", "error"); });
+		});
+
+		// Update product details page price dynamically
+		function updateProductDetailsPrice(qty) {
+			let unitPriceBox = $('.unitPriceBox');
+			let finalPriceBox = $('.finalPriceBox');
+			if (finalPriceBox.length) {
+				let unitFinal = parseFloat(finalPriceBox.data('unit-price'));
+				finalPriceBox.text((unitFinal * qty).toFixed(2) + " ৳");
+			}
+			if (unitPriceBox.length) {
+				let unitStrike = parseFloat(unitPriceBox.data('unit-price'));
+				unitPriceBox.text((unitStrike * qty).toFixed(2) + " ৳");
+			}
+		}
+
+		// Buy Now (not in cart) - adds to cart, shows qty +/- and Add to Cart on same row
+		$(document).on("click", ".buyNow", function () {
+			let btn = $(this);
+			let url = btn.data("url");
+			let product_id = btn.data("product");
+			let qty = 1;
+
+			$.post(url, { product: product_id, qty: qty }, function (res) {
+				if (res.status) {
+					btn.closest(".cart-action-wrapper").html(res.productCartItem);
+					$(".cartCount").text(res.cartCount);
+					$(".cartItemsCount").text(res.cartItemsCount);
+					$(".cartTotalPrice").text(res.cartTotal.toFixed(2) + " tk");
+					$(".mobileCartTotalPrice").text("৳" + res.cartTotal.toFixed(2));
+
+					Swal.fire({
+						toast: true, icon: "success", title: res.message,
+						position: "top", timer: 2000, showConfirmButton: false
+					});
+				}
+			}).fail(() => {
+				Swal.fire("Error", "Could not add to cart.", "error");
+			});
+		});
+
+		// Add to Cart (when in cart, same row)
+		$(document).on("click", ".addToCartSameRow", function () {
+			let btn = $(this);
+			let url = btn.data("url");
+			let product_id = btn.data("product");
+			let qty = parseInt(btn.closest(".cart-action-wrapper").find(".product_qty").val()) || 1;
+
+			$.post(url, { product: product_id, qty: qty }, function (res) {
+				if (res.status) {
+					btn.closest(".cart-action-wrapper").html(res.productCartItem);
+					$(".cartCount").text(res.cartCount);
+					$(".cartItemsCount").text(res.cartItemsCount);
+					$(".cartTotalPrice").text(res.cartTotal.toFixed(2) + " tk");
+					$(".mobileCartTotalPrice").text("৳" + res.cartTotal.toFixed(2));
+
+					Swal.fire({
+						toast: true, icon: "success", title: res.message,
+						position: "top", timer: 2000, showConfirmButton: false
+					});
+				}
+			}).fail(() => {
+				Swal.fire("Error", "Could not add to cart.", "error");
+			});
+		});
+    </script>
+
     @include('frontend.layouts.live_chat')
 </body>
 </html>
