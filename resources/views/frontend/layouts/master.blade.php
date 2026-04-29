@@ -261,7 +261,7 @@ $totalCartPrice = \App\Models\Cart::totalCartPrice();
             <div class="other-icons">
                 <a href="{{ url('/') }}"><i class="fas fa-home"></i></a>
                 <a href="{{ url('/') }}"><i class="fas fa-th-large"></i></a>
-                <a href="#"><i class="fas fa-search"></i></a>
+                <a href="#" id="mobileSearchIcon"><i class="fas fa-search"></i></a>
             </div>
         </div>
 
@@ -340,6 +340,18 @@ $totalCartPrice = \App\Models\Cart::totalCartPrice();
         $.ajaxSetup({
             headers: {
                 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            }
+        });
+        // Mobile Search Icon - toggle header search modal
+        $("#mobileSearchIcon").on("click", function(e) {
+            e.preventDefault();
+            var searchModal = document.getElementById("headerSearchModal");
+            if (searchModal) {
+                searchModal.classList.toggle("show");
+                var searchInput = searchModal.querySelector("input[type=search], input[name=q]");
+                if (searchModal.classList.contains("show") && searchInput) {
+                    searchInput.focus();
+                }
             }
         });
     });
