@@ -236,18 +236,12 @@ class FrontendController extends Controller
     {
         $data = null;
         return view('website.qurbaniOccation');
-        // $data['doctors'] =  Doctor::whereActive(true)->get();
-        // $data['departments'] =  BisesoggoCategory::whereActive(true)->get();
-        // return view('frontend.home.doctorList',$data);
     }
 
     public function qurbaniRegular()
     {
         $data = null;
         return view('website.qurbaniRegular');
-        // $data['doctors'] =  Doctor::whereActive(true)->get();
-        // $data['departments'] =  BisesoggoCategory::whereActive(true)->get();
-        // return view('frontend.home.doctorList',$data);
     }
 
     public function doctorDetails($id){

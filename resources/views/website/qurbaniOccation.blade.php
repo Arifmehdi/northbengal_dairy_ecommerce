@@ -1,4 +1,4 @@
-@extends('frontend.layouts.ecommercemaster')
+@extends('frontend.layouts.master')
 
 @section('title', 'Contact Us - North Bengal')
 
